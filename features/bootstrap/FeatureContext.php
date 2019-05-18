@@ -13,6 +13,8 @@ use Behat\Behat\Context\Context;
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
 
+use Behat\Behat\Event\SuiteEvent;
+use Behat\Behat\Event\ScenarioEvent;
 /**
  * Defines application features from the specific context.
  */
@@ -35,9 +37,7 @@ class FeatureContext implements Context
 		$this->navegador->manage()->window()->maximize();
 		$this->navegador->manage()->timeouts()->implicitlyWait(5);
     }
-    public function __destruct (){
-        $this->navegador->quit();
-    }
+
 
      /**
      * @Given o usuario esta logado
@@ -63,35 +63,37 @@ class FeatureContext implements Context
         ->click();
     }
 
-    
+
     /**
-     * @When ele cadastrar seu telefone principal
+     * @When ele cadastrar seu contato:
      */
-    public function eleCadastrarSeuTelefonePrincipal()
+    public function eleCadastrarSeuContato(TableNode $table)
     {
+        $item = $table->getHash()[0];
+        
         $this->navegador->findElement(WebDriverBy::className('me'))->click();
 
         $this->navegador->findElement(WebDriverBy::linkText('MORE DATA ABOUT YOU'))->click();
-
+    
         $this->navegador->findElement(WebDriverBy::xpath('//button[@data-target="addmoredata"]'))->click();
-
+    
         $fieldType =  $this->navegador->findElement(WebDriverBy::name('type'));
         $comboType = new WebDriverSelect($fieldType);
-        $comboType->selectByValue('phone');//
-
+        $comboType->selectByVisibleText($item['tipo']);//
+    
         $this->navegador
-			->findElement(WebDriverBy::cssSelector('input[name="contact"]'))
-            ->sendKeys('44999999999');
-            
-        $this->navegador
-			->findElement(WebDriverBy::linkText('SAVE'))
-            ->click();
-       
+        		->findElement(WebDriverBy::cssSelector('input[name="contact"]'))
+                ->sendKeys($item['contato']);
+                
+         $this->navegador
+        		->findElement(WebDriverBy::linkText('SAVE'))
+                ->click();
     }
 
-    /**
+       /**
      * @Then ele vera a mensagem :arg1
      */
+
     public function eleVeraAMensagem($arg1)
     {
         $wait = new WebDriverWait($this->navegador, 9, 500);
@@ -104,7 +106,13 @@ class FeatureContext implements Context
 
         Assert::assertContains($arg1, $mensagem);
     }
-   
 
+       /**
+      * @AfterScenario 
+      */
+      public function after($event)
+      {
+        $this->navegador->quit();
+      }
 
 }
